@@ -9,17 +9,27 @@ import { zodResolver } from '@hookform/resolvers/zod';
 const AddMemberSchema = z.object({
     name: z.string({
       message: 'Bu alan zorunludur.',
-    }),
+    })
+    .min(3, { message: 'Bu alan en az 3 karakter olmalıdır.' })
+    .regex(/^[a-zA-ZçÇğĞıİöÖşŞüÜ\s]+$/, {
+        message: 'Sadece harflerden oluşmalıdır.',
+      }),
     surname: z
       .string({
         message: 'Bu alan zorunludur.',
       })
-      .min(3, { message: 'Bu alan zorunludur.' }),
+      .regex(/^[a-zA-ZçÇğĞıİöÖşŞüÜ\s]+$/, {
+        message: 'Sadece harflerden oluşmalıdır.',
+      })
+      .min(3, { message: 'Bu alan en az 3 karakter olmalıdır.' }),
     identityNumber: z
       .string({
         message: 'Bu alan zorunludur.',
       })
-      .min(11, { message: 'Bu alan zorunludur.' }),
+      .min(11, { message: 'Bu alan 11 karakter olmalıdır.' })
+      .regex(/^\d+$/, {
+        message: 'Bu alan sayısal olmalıdır.',
+      }),
     phone: z
       .string({
         message: 'Bu alan zorunludur.',
