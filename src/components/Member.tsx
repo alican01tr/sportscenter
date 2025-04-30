@@ -5,6 +5,12 @@ import { useGlobalStore } from '@/store/global.store'
 const Members = () => {
   const { members, setMembers, paymentComingMembersIds } = useGlobalStore()
 
+  const handleDeleteMember = (id: number) => {
+    const confirm = window.confirm('Bu üyeyi silmek istediğinize emin misiniz?')
+    if (confirm) {
+      setMembers(members.filter(m => m.id !== id))
+    }
+  }
   return (
     <div>
       <table className="w-full">
@@ -15,6 +21,7 @@ const Members = () => {
               <th className="px-4 py-2 text-left">Başlangıç Tarihi</th>
               <th className="px-4 py-2 text-left">Bitiş Tarihi</th>
               <th className="px-4 py-2 text-left">Durum</th>
+              <th className="px-4 py-2 text-left">İşlem</th>
             </tr>
           </thead>
           <tbody>
@@ -31,6 +38,11 @@ const Members = () => {
                   }`}>
                     {new Date(member.memberEndDate) >= new Date() ? 'Aktif' : 'Pasif'}
                   </span>
+                </td>
+                <td className="px-4 py-2">
+                  <button className="cursor-pointer bg-red-500 text-white px-2 py-0 rounded-md" onClick={() => handleDeleteMember(member.id)}>
+                    Sil
+                  </button>
                 </td>
               </tr>
             ))}

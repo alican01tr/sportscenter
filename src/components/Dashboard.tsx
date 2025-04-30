@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import Members from './Member';
 import StatCard from './StatCard';
 import { useGlobalStore } from '@/store/global.store';
-const Dashboard = () => {
+const  Dashboard = () => {
   const { totalMembers, activeMembers } = useGlobalStore()
   const stats = [
     {

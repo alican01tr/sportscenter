@@ -3,66 +3,88 @@ import React, { useState, useEffect } from 'react';
 import { useGlobalStore } from '@/store/global.store'
 import { Member } from '@/store/store.type';
 import { Gender } from '@/types/gender.type';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
+import { zodResolver } from '@hookform/resolvers/zod';
+const AddMemberSchema = z.object({
+    name: z.string({
+      message: 'Bu alan zorunludur.',
+    }),
+    surname: z
+      .string({
+        message: 'Bu alan zorunludur.',
+      })
+      .min(3, { message: 'Bu alan zorunludur.' }),
+    identityNumber: z
+      .string({
+        message: 'Bu alan zorunludur.',
+      })
+      .min(11, { message: 'Bu alan zorunludur.' }),
+    phone: z
+      .string({
+        message: 'Bu alan zorunludur.',
+      })
+      .min(11, { message: 'Bu alan zorunludur.' }),
+    height: z
+      .number({
+        message: 'Bu alan numara zorunludur.',
+      })
+      .min(1, { message: 'Bu alan minimum 1 olmalıdır.' })
+      .max(999, { message: 'Bu alan maksimum 999 olmalıdır.' }),
+    weight: z
+      .number({
+        message: 'Bu alan zorunludur.',
+      })
+      .min(1, { message: 'Bu alan minimum 1 olmalıdır.' })
+      .max(999, { message: 'Bu alan maksimum 999 olmalıdır.' }),
+    gender: z
+      .enum(['male', 'female'], { message: 'Bu alan zorunludur.' }),
+    memberStartDate: z
+      .date({
+        message: 'Bu alan zorunludur.'
+      }),
+    memberEndDate: z
+      .date({
+        message: 'Bu alan zorunludur.'
+      })
+  })
+
 const AddMemberModal = ({ isOpen, onClose }: { isOpen: boolean, onClose: () => void }) => {
   const today = new Date().toISOString().split('T')[0];
   const { members, setMembers } = useGlobalStore()
-
-  const [form, setForm] = useState<Member>({
-    id: 0,
+  const [ defaultValues, setDefaultValues] = useState<z.infer<typeof AddMemberSchema>>({
     name: '',
     surname: '',
+    identityNumber: '',
     phone: '',
     height: 0,
     weight: 0,
     gender: 'male',
     memberStartDate: new Date(today),
     memberEndDate: new Date(today),
-    identityNumber: ''
-  });
+  })
+  const form = useForm<z.infer<typeof AddMemberSchema>>({
+    resolver: zodResolver(AddMemberSchema),
+    defaultValues: defaultValues,
+  })
 
-  useEffect(() => {
-    if (isOpen) {
-      setForm({
-        ...form,
-        name: '',
-        surname: '',
-        phone: '',
-        height: 0,
-        weight: 0,
-        gender: 'male',
-        memberStartDate: new Date(today),
-        memberEndDate: new Date(today)
-      });
-    }
-  }, [isOpen]);
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-
-    if (name === 'memberStartDate' || name === 'memberEndDate') {
-      setForm({ ...form, [name]: new Date(value) });
-    } else {
-      setForm({ ...form, [name]: value });
-    }
-  };
-
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
+  const handleSubmit = (data: z.infer<typeof AddMemberSchema>) => {
     alert('Üye başarıyla eklendi!');
-    console.log('Üye bilgileri:', form);
+    console.log('Üye bilgileri:', data);
     setMembers([...members, {
         id: members.length + 1,
-        name: form.name,
-        surname: form.surname,
-        phone: form.phone,
-        height: form.height,
-        weight: form.weight,
-        gender: form.gender,
-        memberStartDate: form.memberStartDate,
-        memberEndDate: form.memberEndDate,
-        identityNumber: form.identityNumber
+        name: data.name,
+        surname: data.surname,
+        phone: data.phone,
+        height: data.height,
+        weight: data.weight,
+        gender: data.gender,
+        memberStartDate: data.memberStartDate,
+        memberEndDate: data.memberEndDate,
+        identityNumber: data.identityNumber
     }])
     onClose();
+    form.reset();
   };
 
   if (!isOpen) return null;
@@ -82,7 +104,7 @@ const AddMemberModal = ({ isOpen, onClose }: { isOpen: boolean, onClose: () => v
         </div>
 
         <div className="p-6">
-          <form onSubmit={handleSubmit}>
+          <form onSubmit={form.handleSubmit(handleSubmit)}>
             <div className="mb-6">
               <h3 className="text-lg font-semibold mb-3 text-gray-700 border-b pb-2">Kişisel Bilgiler</h3>
 
@@ -92,13 +114,14 @@ const AddMemberModal = ({ isOpen, onClose }: { isOpen: boolean, onClose: () => v
                     Ad
                   </label>
                   <input
-                    type="text"
+
                     name="name"
-                    value={form.name}
-                    onChange={handleChange}
+                    onChange={(e) => { form.setValue('name', e.target.value) }}
+                    type="text"
+                    value={form.watch('name')}
                     className="shadow-sm border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm"
-                    required
                   />
+                  {form.formState.errors.name && <p className="text-red-500 text-sm">{form.formState.errors.name.message}</p>}
                 </div>
 
                 <div>
@@ -106,12 +129,11 @@ const AddMemberModal = ({ isOpen, onClose }: { isOpen: boolean, onClose: () => v
                     Soyad
                   </label>
                   <input
-                    type="text"
                     name="surname"
-                    value={form.surname}
-                    onChange={handleChange}
+                    onChange={(e) => { form.setValue('surname', e.target.value) }}
+                    type="text"
+                    value={form.watch('surname')}
                     className="shadow-sm border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm"
-                    required
                   />
                 </div>
               </div>
@@ -122,26 +144,27 @@ const AddMemberModal = ({ isOpen, onClose }: { isOpen: boolean, onClose: () => v
                     TC Kimlik Numarası
                   </label>
                   <input
-                    type="text"
                     name="identityNumber"
-                    value={form.identityNumber}
-                    onChange={handleChange}
+                    onChange={(e) => { form.setValue('identityNumber', e.target.value) }}
+                    type="text"
+                    value={form.watch('identityNumber')}
                     className="shadow-sm border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm"
-                    required
                   />
+                  {form.formState.errors.identityNumber && <p className="text-red-500 text-sm">{form.formState.errors.identityNumber.message}</p>}
                 </div>
                 <div>
                   <label className="block text-gray-700 text-sm font-medium mb-2">
                     Telefon
                   </label>
+
                   <input
-                    type="text"
                     name="phone"
-                    value={form.phone}
-                    onChange={handleChange}
+                    onChange={(e) => { form.setValue('phone', e.target.value) }}
+                    type="text"
+                    value={form.watch('phone')}
                     className="shadow-sm border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm"
-                    required
                   />
+                  {form.formState.errors.phone && <p className="text-red-500 text-sm">{form.formState.errors.phone.message}</p>}
                 </div>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
@@ -151,29 +174,27 @@ const AddMemberModal = ({ isOpen, onClose }: { isOpen: boolean, onClose: () => v
                     Boy (cm)
                   </label>
                   <input
-                    type="number"
                     name="height"
-                    value={form.height}
-                    onChange={handleChange}
-                    placeholder="170"
+                    onChange={(e) => { console.log(parseInt(e.target.value)); form.setValue('height', parseInt(e.target.value)) }}
+                    type="number"
+
+                    value={form.watch('height')}
                     className="shadow-sm border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm"
-                    required
                   />
+                  {form.formState.errors.height && <p className="text-red-500 text-sm">{form.formState.errors.height.message}</p>}
                 </div>
                 <div>
                   <label className="block text-gray-700 text-sm font-medium mb-2">
                     Kilo (kg)
                   </label>
                   <input
-                    type="number"
                     name="weight"
-                    value={form.weight}
-                    onChange={handleChange}
-                    min="30"
-                    max="250"
+                    onChange={(e) => { form.setValue('weight', parseInt(e.target.value)) }}
+                    type="number"
+                    value={form.watch('weight')}
                     className="shadow-sm border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm"
-                    required
                   />
+                  {form.formState.errors.weight && <p className="text-red-500 text-sm">{form.formState.errors.weight.message}</p>}
                 </div>
               </div>
 
@@ -184,14 +205,14 @@ const AddMemberModal = ({ isOpen, onClose }: { isOpen: boolean, onClose: () => v
                   </label>
                   <select
                     name="gender"
-                    value={form.gender}
-                    onChange={(e) => setForm({ ...form, gender: e.target.value as Gender })}
+                    onChange={(e) => { form.setValue('gender', e.target.value as Gender) }}
+                    value={form.watch('gender')}
                     className="shadow-sm border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm"
-                    required
                   >
                     <option value="male">Erkek</option>
                     <option value="female">Kadın</option>
                   </select>
+                  {form.formState.errors.gender && <p className="text-red-500 text-sm">{form.formState.errors.gender.message}</p>}
                 </div>
               </div>
             </div>
@@ -205,12 +226,13 @@ const AddMemberModal = ({ isOpen, onClose }: { isOpen: boolean, onClose: () => v
                     Başlangıç Tarihi
                   </label>
                   <input
-                    type="date"
                     name="memberStartDate"
-                    onChange={handleChange}
+                    type="date"
+                    value={(form.watch('memberStartDate')).toISOString().split('T')[0]}
+                    onChange={(e) => { form.setValue('memberStartDate', new Date(e.target.value)) }}
                     className="shadow-sm border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm"
-                    required
                   />
+                  {form.formState.errors.memberStartDate && <p className="text-red-500 text-sm">{form.formState.errors.memberStartDate.message}</p>}
                 </div>
 
                 <div>
@@ -218,12 +240,13 @@ const AddMemberModal = ({ isOpen, onClose }: { isOpen: boolean, onClose: () => v
                     Bitiş Tarihi
                   </label>
                   <input
-                    type="date"
                     name="memberEndDate"
-                    onChange={handleChange}
+                    type="date"
+                    value={(form.watch('memberEndDate')).toISOString().split('T')[0]}
+                    onChange={(e) => { form.setValue('memberEndDate', new Date(e.target.value)) }}
                     className="shadow-sm border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm"
-                    required
                   />
+                  {form.formState.errors.memberEndDate && <p className="text-red-500 text-sm">{form.formState.errors.memberEndDate.message}</p>}
                 </div>
               </div>
             </div>
